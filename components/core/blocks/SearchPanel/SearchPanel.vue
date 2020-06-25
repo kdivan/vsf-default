@@ -106,7 +106,8 @@ export default {
       const productList = this.products || []
       if (this.selectedCategoryIds.length) {
         return productList.filter(product => product.category_ids.some(categoryId => {
-          return this.selectedCategoryIds.includes(categoryId)
+          const catId = parseInt(categoryId)
+          return this.selectedCategoryIds.includes(catId)
         }))
       }
       return productList
@@ -117,11 +118,11 @@ export default {
         .map(p => p.category)
         .flat()
 
-      const distinctCategories = Array.from(
+      const discinctCategories = Array.from(
         new Set(categories.map(c => c.category_id))
       ).map(catId => categories.find(c => c.category_id === catId))
 
-      return distinctCategories
+      return discinctCategories
     },
     getNoResultsMessage () {
       let msg = ''

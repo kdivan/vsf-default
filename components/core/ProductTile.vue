@@ -45,17 +45,17 @@
       <span
         class="price-original mr5 lh30 cl-secondary"
         v-if="product.special_price && parseFloat(product.original_price_incl_tax) > 0 && !onlyImage"
-      >{{ product.original_price_incl_tax | price(storeView) }}</span>
+      >{{ product.original_price_incl_tax | price }}</span>
 
       <span
         class="price-special lh30 cl-accent weight-700"
         v-if="product.special_price && parseFloat(product.special_price) > 0 && !onlyImage"
-      >{{ product.price_incl_tax | price(storeView) }}</span>
+      >{{ product.price_incl_tax | price }}</span>
 
       <span
         class="lh30 cl-secondary"
         v-if="!product.special_price && parseFloat(product.price_incl_tax) > 0 && !onlyImage"
-      >{{ product.price_incl_tax | price(storeView) }}</span>
+      >{{ product.price_incl_tax | price }}</span>
     </router-link>
   </div>
 </template>
@@ -69,7 +69,6 @@ import AddToWishlist from 'theme/components/core/blocks/Wishlist/AddToWishlist'
 import AddToCompare from 'theme/components/core/blocks/Compare/AddToCompare'
 import { IsOnWishlist } from '@vue-storefront/core/modules/wishlist/components/IsOnWishlist'
 import { IsOnCompare } from '@vue-storefront/core/modules/compare/components/IsOnCompare'
-import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 
 export default {
   mixins: [ProductTile, IsOnWishlist, IsOnCompare],
@@ -97,9 +96,6 @@ export default {
     },
     favoriteIcon () {
       return this.isOnWishlist ? 'favorite' : 'favorite_border'
-    },
-    storeView () {
-      return currentStoreView()
     }
   },
   methods: {
@@ -206,7 +202,7 @@ $color-white: color(white);
   &__thumb {
     padding-bottom: calc(143.88% / (164.5 / 100));
     @media screen and (min-width: 768px) {
-      padding-bottom: calc(300% / (276.5 / 115));
+      padding-bottom: calc(300% / (276.5 / 100));
     }
     opacity: 0.8;
     will-change: opacity, transform;

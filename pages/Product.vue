@@ -1,5 +1,5 @@
 <template>
-  <div id="product">
+  <div id="product" itemscope itemtype="http://schema.org/Product">
     <section class="bg-cl-secondary px20 product-top-section">
       <div class="container">
         <section class="row m0 between-xs">
@@ -18,6 +18,7 @@
             <h1
               class="mb20 mt0 cl-mine-shaft product-name"
               data-testid="productName"
+              itemprop="name"
             >
               {{ getCurrentProduct.name | htmlDecode }}
               <web-share
@@ -28,17 +29,35 @@
             </h1>
             <div
               class="mb20 uppercase cl-secondary"
+              itemprop="sku"
               :content="getCurrentProduct.sku"
             >
               {{ $t('SKU: {sku}', { sku: getCurrentProduct.sku }) }}
             </div>
-            <div>
-              <product-price
-                class="mb40"
-                v-if="getCurrentProduct.type_id !== 'grouped'"
-                :product="getCurrentProduct"
-                :custom-options="getCurrentCustomOptions"
-              />
+            <div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+              <meta itemprop="priceCurrency" :content="$store.state.storeView.i18n.currencyCode">
+              <meta itemprop="price" :content="parseFloat(getCurrentProduct.price_incl_tax).toFixed(2)">
+              <meta itemprop="availability" :content="structuredData.availability">
+              <meta itemprop="url" :content="getCurrentProduct.url_path">
+              <div class="mb40 price serif" v-if="getCurrentProduct.type_id !== 'grouped'">
+                <div
+                  class="h3 cl-secondary"
+                  v-if="getCurrentProduct.special_price && getCurrentProduct.price_incl_tax && getCurrentProduct.original_price_incl_tax"
+                >
+                  <span
+                    class="h2 cl-mine-shaft weight-700"
+                  >{{ getCurrentProduct.price_incl_tax * getCurrentProduct.qty | price }}</span>&nbsp;
+                  <span
+                    class="price-original h3"
+                  >{{ getCurrentProduct.original_price_incl_tax * getCurrentProduct.qty | price }}</span>
+                </div>
+                <div
+                  class="h2 cl-mine-shaft weight-700"
+                  v-if="!getCurrentProduct.special_price && getCurrentProduct.price_incl_tax"
+                >
+                  {{ getCurrentProduct.qty > 0 ? getCurrentProduct.price_incl_tax * getCurrentProduct.qty : getCurrentProduct.price_incl_tax | price }}
+                </div>
+              </div>
               <div class="cl-primary variants" v-if="getCurrentProduct.type_id =='configurable'">
                 <div
                   class="error"
@@ -114,8 +133,7 @@
               :max-quantity="maxQuantity"
               :loading="isStockInfoLoading"
               :is-simple-or-configurable="isSimpleOrConfigurable"
-              :show-quantity="manageQuantity"
-              :check-max-quantity="manageQuantity"
+              show-quantity
               @error="handleQuantityError"
             />
             <div class="row m0">
@@ -144,7 +162,7 @@
       <div class="h4 details-wrapper" :class="{'details-wrapper--open': detailsOpen}">
         <div class="row between-md m0">
           <div class="col-xs-12 col-sm-6">
-            <div class="lh30 h5" v-html="getCurrentProduct.description" />
+            <div class="lh30 h5" itemprop="description" v-html="getCurrentProduct.description" />
           </div>
           <div class="col-xs-12 col-sm-5">
             <ul class="attributes p0 pt5 m0">
@@ -163,10 +181,9 @@
     </section>
     <lazy-hydrate when-idle>
       <reviews
-        :product-name="getCurrentProduct.name"
-        :product-id="getCurrentProduct.id"
+        :product-name="getOriginalProduct.name"
+        :product-id="getOriginalProduct.id"
         v-show="isOnline"
-        :product="getCurrentProduct"
       />
     </lazy-hydrate>
     <lazy-hydrate when-idle>
@@ -179,12 +196,12 @@
       <related-products type="related" />
     </lazy-hydrate>
     <SizeGuide />
-    <script v-html="getJsonLd" type="application/ld+json" />
   </div>
 </template>
 
 <script>
 import i18n from '@vue-storefront/i18n'
+import Product from '@vue-storefront/core/pages/Product'
 import VueOfflineMixin from 'vue-offline/mixin'
 import config from 'config'
 import RelatedProducts from 'theme/components/core/blocks/Product/Related.vue'
@@ -218,11 +235,8 @@ import { htmlDecode } from '@vue-storefront/core/filters'
 import { ReviewModule } from '@vue-storefront/core/modules/review'
 import { RecentlyViewedModule } from '@vue-storefront/core/modules/recently-viewed'
 import { registerModule, isModuleRegistered } from '@vue-storefront/core/lib/modules'
-import { onlineHelper, isServer, productJsonLd } from '@vue-storefront/core/helpers'
+import { onlineHelper, isServer } from '@vue-storefront/core/helpers'
 import { catalogHooksExecutors } from '@vue-storefront/core/modules/catalog-next/hooks'
-import ProductPrice from 'theme/components/core/ProductPrice.vue'
-import { doPlatformPricesSync } from '@vue-storefront/core/modules/catalog/helpers'
-import { filterChangedProduct } from '@vue-storefront/core/modules/catalog/events'
 
 export default {
   components: {
@@ -244,8 +258,7 @@ export default {
     WebShare,
     SizeGuide,
     LazyHydrate,
-    ProductQuantity,
-    ProductPrice
+    ProductQuantity
   },
   mixins: [ProductOption],
   directives: { focusClean },
@@ -259,8 +272,7 @@ export default {
       maxQuantity: 0,
       quantityError: false,
       isStockInfoLoading: false,
-      hasAttributesLoaded: false,
-      manageQuantity: true
+      hasAttributesLoaded: false
     }
   },
   computed: {
@@ -269,8 +281,8 @@ export default {
       getCurrentProduct: 'product/getCurrentProduct',
       getProductGallery: 'product/getProductGallery',
       getCurrentProductConfiguration: 'product/getCurrentProductConfiguration',
-      attributesByCode: 'attribute/attributeListByCode',
-      getCurrentCustomOptions: 'product/getCurrentCustomOptions'
+      getOriginalProduct: 'product/getOriginalProduct',
+      attributesByCode: 'attribute/attributeListByCode'
     }),
     getOptionLabel () {
       return (option) => {
@@ -280,6 +292,11 @@ export default {
     },
     isOnline (value) {
       return onlineHelper.isOnline
+    },
+    structuredData () {
+      return {
+        availability: this.getCurrentProduct.stock && this.getCurrentProduct.stock.is_in_stock ? 'InStock' : 'OutOfStock'
+      }
     },
     getProductOptions () {
       if (
@@ -299,11 +316,9 @@ export default {
       }
     },
     getCustomAttributes () {
-      return Object.values(this.attributesByCode || [])
-        .filter(
-          a => a.is_visible && a.is_user_defined && (parseInt(a.is_visible_on_front) || a.is_visible_on_front === true) && this.getCurrentProduct[a.attribute_code]
-        )
-        .sort((a, b) => { return a.attribute_id > b.attribute_id })
+      return Object.values(this.attributesByCode).filter(a => {
+        return a.is_visible && a.is_user_defined && (parseInt(a.is_visible_on_front) || a.is_visible_on_front === true) && this.getCurrentProduct[a.attribute_code]
+      }).sort((a, b) => { return a.attribute_id > b.attribute_id })
     },
     getAvailableFilters () {
       return getAvailableFiltersByProduct(this.getCurrentProduct)
@@ -315,24 +330,15 @@ export default {
       return ['simple', 'configurable'].includes(this.getCurrentProduct.type_id)
     },
     isAddToCartDisabled () {
-      if (this.quantityError || this.isStockInfoLoading) {
-        return false
-      }
-
-      return this.isOnline && !this.maxQuantity && this.manageQuantity && this.isSimpleOrConfigurable
-    },
-    storeView () {
-      return currentStoreView()
-    },
-    getJsonLd () {
-      return productJsonLd(this.getCurrentProduct, this.getCurrentProductConfiguration.color && this.getCurrentProductConfiguration.color.label, this.$store.state.storeView.i18n.currencyCode, this.getCustomAttributes)
+      return this.quantityError ||
+          this.isStockInfoLoading ||
+          (this.isOnline && !this.maxQuantity && this.isSimpleOrConfigurable)
     }
   },
   async mounted () {
     await this.$store.dispatch('recently-viewed/addItem', this.getCurrentProduct)
   },
-  async asyncData ({ store, route, context }) {
-    if (context) context.output.cacheTags.add('product')
+  async asyncData ({ store, route }) {
     const product = await store.dispatch('product/loadProduct', { parentSku: route.params.parentSku, childSku: route && route.params && route.params.childSku ? route.params.childSku : null })
     const loadBreadcrumbsPromise = store.dispatch('product/loadProductBreadcrumbs', { product })
     if (isServer) await loadBreadcrumbsPromise
@@ -379,9 +385,11 @@ export default {
         action1: { label: this.$t('OK') }
       })
     },
-    async changeFilter (variant) {
-      const selectedConfiguration = Object.assign({ attribute_code: variant.type }, variant)
-      await filterChangedProduct(selectedConfiguration, this.$store, this.$router)
+    changeFilter (variant) {
+      this.$bus.$emit(
+        'filter-changed-product',
+        Object.assign({ attribute_code: variant.type }, variant)
+      )
       this.getQuantity()
     },
     openSizeGuide () {
@@ -396,16 +404,11 @@ export default {
       if (this.isStockInfoLoading) return // stock info is already loading
       this.isStockInfoLoading = true
       try {
-        if (config.products.alwaysSyncPricesClientSide) {
-          doPlatformPricesSync([this.getCurrentProduct]);
-        }
         const res = await this.$store.dispatch('stock/check', {
           product: this.getCurrentProduct,
           qty: this.getCurrentProduct.qty
         })
-
-        this.manageQuantity = res.isManageStock
-        this.maxQuantity = res.isManageStock ? res.qty : null
+        this.maxQuantity = res.qty
       } finally {
         this.isStockInfoLoading = false
       }
@@ -417,7 +420,7 @@ export default {
   metaInfo () {
     const storeView = currentStoreView()
     return {
-      /* link: [
+      link: [
         { rel: 'amphtml',
           href: this.$router.resolve(localizedRoute({
             name: this.getCurrentProduct.type_id + '-product-amp',
@@ -428,7 +431,7 @@ export default {
             }
           }, storeView.storeCode)).href
         }
-      ], */
+      ],
       title: htmlDecode(this.getCurrentProduct.meta_title || this.getCurrentProduct.name),
       meta: this.getCurrentProduct.meta_description ? [{ vmid: 'description', name: 'description', content: htmlDecode(this.getCurrentProduct.meta_description) }] : []
     }
@@ -481,6 +484,12 @@ $bg-secondary: color(secondary, $colors-background);
 .product-name {
   @media (max-width: 767px) {
     font-size: 36px;
+  }
+}
+
+.price {
+  @media (max-width: 767px) {
+    color: $color-primary;
   }
 }
 
@@ -567,6 +576,10 @@ $bg-secondary: color(secondary, $colors-background);
       display: none;
     }
   }
+}
+
+.price-original {
+  text-decoration: line-through;
 }
 
 .action {

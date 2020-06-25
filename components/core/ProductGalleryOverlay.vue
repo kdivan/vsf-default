@@ -16,7 +16,7 @@
 </template>
 <script>
 import NoSSR from 'vue-no-ssr'
-import ProductGalleryZoomCarousel from './ProductGalleryZoomCarousel.vue'
+const ProductGalleryZoomCarousel = () => import(/* webpackChunkName: "vsf-product-gallery-zoom-carousel" */ './ProductGalleryZoomCarousel.vue')
 
 export default {
   name: 'ProductGalleryOverlay',

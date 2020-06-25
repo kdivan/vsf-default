@@ -84,7 +84,6 @@ import ProductListing from '../components/core/ProductListing.vue'
 import Breadcrumbs from '../components/core/Breadcrumbs.vue'
 import SortBy from '../components/core/SortBy.vue'
 import { isServer } from '@vue-storefront/core/helpers'
-import { Logger } from '@vue-storefront/core/lib/logger'
 import { getSearchOptionsFromRouteParams } from '@vue-storefront/core/modules/catalog-next/helpers/categoryHelpers'
 import config from 'config'
 import Columns from '../components/core/Columns.vue'
@@ -103,14 +102,13 @@ const composeInitialPageState = async (store, route, forceLoad = false) => {
     const filters = getSearchOptionsFromRouteParams(route.params)
     const cachedCategory = store.getters['category-next/getCategoryFrom'](route.path)
     const currentCategory = cachedCategory && !forceLoad ? cachedCategory : await store.dispatch('category-next/loadCategory', { filters })
-    const pageSize = store.getters['url/isBackRoute'] ? store.getters['url/getCurrentRoute'].categoryPageSize : THEME_PAGE_SIZE
-    await store.dispatch('category-next/loadCategoryProducts', { route, category: currentCategory, pageSize })
+    await store.dispatch('category-next/loadCategoryProducts', {route, category: currentCategory, pageSize: THEME_PAGE_SIZE})
     const breadCrumbsLoader = store.dispatch('category-next/loadCategoryBreadcrumbs', { category: currentCategory, currentRouteName: currentCategory.name, omitCurrent: true })
 
     if (isServer) await breadCrumbsLoader
     catalogHooksExecutors.categoryPageVisited(currentCategory)
   } catch (e) {
-    Logger.error('Problem with setting Category initial data!', 'category', e)()
+    console.error('Problem with setting Category initial data!', e)
   }
 }
 
@@ -148,8 +146,7 @@ export default {
       return this.getCategoryProductsTotal === 0
     }
   },
-  async asyncData ({ store, route, context }) { // this is for SSR purposes to prefetch data - and it's always executed before parent component methods
-    if (context) context.output.cacheTags.add('category')
+  async asyncData ({ store, route }) { // this is for SSR purposes to prefetch data - and it's always executed before parent component methods
     await composeInitialPageState(store, route)
   },
   async beforeRouteEnter (to, from, next) {
@@ -188,7 +185,7 @@ export default {
       try {
         await this.$store.dispatch('category-next/loadMoreCategoryProducts')
       } catch (e) {
-        Logger.error('Problem with fetching more products', 'category', e)()
+        console.error('Problem with fetching more products', e)
       } finally {
         this.loadingProducts = false
       }
@@ -200,14 +197,14 @@ export default {
     const meta = meta_description ? [
       { vmid: 'description', name: 'description', content: htmlDecode(meta_description) }
     ] : []
-    /* const categoryLocaliedLink = localizedRoute({
+    const categoryLocaliedLink = localizedRoute({
       name: 'category-amp',
       params: { slug }
     }, storeView.storeCode)
-    const ampCategoryLink = this.$router.resolve(categoryLocaliedLink).href */
+    const ampCategoryLink = this.$router.resolve(categoryLocaliedLink).href
 
     return {
-      // link: [ { rel: 'amphtml', href: ampCategoryLink } ],
+      link: [ { rel: 'amphtml', href: ampCategoryLink } ],
       title: htmlDecode(meta_title || name),
       meta
     }
@@ -216,110 +213,110 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .btn {
-    &__filter {
-      min-width: 100px;
-    }
+.btn {
+  &__filter {
+    min-width: 100px;
   }
-  .divider {
-    width: calc(100vw - 8px);
-    bottom: 20px;
-    left: -36px;
+}
+.divider {
+  width: calc(100vw - 8px);
+  bottom: 20px;
+  left: -36px;
+}
+.category-filters {
+  width: 242px;
+}
+
+.mobile-filters {
+  display: none;
+  overflow: auto;
+}
+
+.mobile-filters-button {
+  display: none;
+}
+
+.mobile-sorting {
+  display: none;
+}
+
+.category-title {
+  line-height: 65px;
+}
+
+.sorting {
+  label {
+    margin-right: 10px;
   }
-  .category-filters {
-    width: 242px;
+}
+
+@media (max-width: 64em) {
+  .products-list {
+    max-width: 530px;
+  }
+}
+
+@media (max-width: 770px) {
+  .category-title {
+    margin: 0;
+    font-size: 36px;
+    line-height: 40px;
+  }
+
+  .products-list {
+    width: 100%;
+    max-width: none;
   }
 
   .mobile-filters {
-    display: none;
-    overflow: auto;
+    display: block;
   }
 
   .mobile-filters-button {
+    display: block;
+    height: 45px;
+  }
+
+  .sorting {
     display: none;
   }
 
   .mobile-sorting {
+    display: block;
+  }
+
+  .category-filters {
     display: none;
   }
 
-  .category-title {
-    line-height: 65px;
+  .product-listing {
+    justify-content: center;;
   }
 
-  .sorting {
-    label {
-      margin-right: 10px;
-    }
-  }
-
-  @media (max-width: 64em) {
-    .products-list {
-      max-width: 530px;
-    }
-  }
-
-  @media (max-width: 770px) {
-    .category-title {
-      margin: 0;
-      font-size: 36px;
-      line-height: 40px;
-    }
-
-    .products-list {
-      width: 100%;
-      max-width: none;
-    }
-
-    .mobile-filters {
-      display: block;
-    }
-
-    .mobile-filters-button {
-      display: block;
-      height: 45px;
-    }
-
-    .sorting {
-      display: none;
-    }
-
-    .mobile-sorting {
-      display: block;
-    }
-
-    .category-filters {
-      display: none;
-    }
-
-    .product-listing {
-      justify-content: center;;
-    }
-
-    .mobile-filters {
-      position: fixed;
-      background-color: #F2F2F2;
-      z-index: 5;
-      padding: 0 40px;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      top: 0;
-      box-sizing: border-box;
-    }
-
-    .mobile-filters-body {
-      padding-top: 50px;
-    }
-  }
-
-  .close-container {
+  .mobile-filters {
+    position: fixed;
+    background-color: #F2F2F2;
+    z-index: 5;
+    padding: 0 40px;
     left: 0;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    box-sizing: border-box;
   }
 
-  .close {
-    margin-left: auto;
+  .mobile-filters-body {
+    padding-top: 50px;
   }
+}
+
+.close-container {
+  left: 0;
+}
+
+.close {
+  margin-left: auto;
+}
 </style>
 <style lang="scss">
 .product-image {

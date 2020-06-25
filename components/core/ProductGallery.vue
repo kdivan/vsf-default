@@ -31,7 +31,8 @@ import onEscapePress from '@vue-storefront/core/mixins/onEscapePress'
 import NoSSR from 'vue-no-ssr'
 import ProductImage from './ProductImage'
 import { onlineHelper } from '@vue-storefront/core/helpers'
-import ProductGalleryCarousel from './ProductGalleryCarousel.vue'
+
+const ProductGalleryCarousel = () => import(/* webpackChunkName: "vsf-product-gallery-carousel" */ './ProductGalleryCarousel.vue')
 
 export default {
   components: {

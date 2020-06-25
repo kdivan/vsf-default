@@ -51,6 +51,7 @@
           </div>
           <product-quantity
             class="h5 cl-accent lh25 qty"
+            v-if="product.type_id !== 'grouped' && product.type_id !== 'bundle'"
             :value="productQty"
             :max-quantity="maxQuantity"
             :loading="isStockInfoLoading"
@@ -62,29 +63,29 @@
         <div class="flex mr10 align-right start-xs between-sm prices">
           <div class="prices" v-if="!displayItemDiscounts || !isOnline">
             <span class="h4 serif cl-error price-special" v-if="product.special_price">
-              {{ product.price_incl_tax * product.qty | price(storeView) }}
+              {{ product.price_incl_tax * product.qty | price }}
             </span>
             <span class="h6 serif price-original" v-if="product.special_price">
-              {{ product.original_price_incl_tax * product.qty | price(storeView) }}
+              {{ product.original_price_incl_tax * product.qty | price }}
             </span>
             <span class="h4 serif price-regular" v-else data-testid="productPrice">
-              {{ (product.original_price_incl_tax ? product.original_price_incl_tax : product.price_incl_tax) * product.qty | price(storeView) }}
+              {{ (product.original_price_incl_tax ? product.original_price_incl_tax : product.price_incl_tax) * product.qty | price }}
             </span>
           </div>
           <div class="prices" v-else-if="isOnline && product.totals">
             <span class="h4 serif cl-error price-special" v-if="product.totals.discount_amount">
-              {{ product.totals.row_total - product.totals.discount_amount + product.totals.tax_amount | price(storeView) }}
+              {{ product.totals.row_total - product.totals.discount_amount + product.totals.tax_amount | price }}
             </span>
             <span class="h6 serif price-original" v-if="product.totals.discount_amount">
-              {{ product.totals.row_total_incl_tax | price(storeView) }}
+              {{ product.totals.row_total_incl_tax | price }}
             </span>
             <span class="h4 serif price-regular" v-if="!product.totals.discount_amount">
-              {{ product.totals.row_total_incl_tax | price(storeView) }}
+              {{ product.totals.row_total_incl_tax | price }}
             </span>
           </div>
           <div class="prices" v-else>
             <span class="h4 serif price-regular">
-              {{ (product.regular_price || product.price_incl_tax) * product.qty | price(storeView) }}
+              {{ (product.regular_price || product.price_incl_tax) * product.qty | price }}
             </span>
           </div>
         </div>
@@ -135,7 +136,7 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
+import { mapActions } from 'vuex'
 import config from 'config'
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import { formatProductLink } from '@vue-storefront/core/modules/url/helpers'
@@ -178,16 +179,11 @@ export default {
   },
   mixins: [Product, ProductOption, EditMode],
   computed: {
-    ...mapState({
-      isMicrocartOpen: state => state.ui.microcart
-    }),
     hasProductInfo () {
       return this.product.info && Object.keys(this.product.info).length > 0
     },
     hasProductErrors () {
-      const errors = this.product.errors || {}
-      const errorsValuesExists = Object.keys(errors).filter(errorKey => errors[errorKey]).length > 0
-      return errorsValuesExists
+      return this.product.errors && Object.keys(this.product.errors).length > 0
     },
     isTotalsActive () {
       return this.isOnline && !this.editMode && this.product.totals && this.product.totals.options
@@ -229,9 +225,6 @@ export default {
       return this.quantityError ||
         this.isStockInfoLoading ||
         (this.isOnline && !this.maxQuantity && this.isSimpleOrConfigurable)
-    },
-    storeView () {
-      return currentStoreView()
     }
   },
   methods: {
@@ -297,14 +290,6 @@ export default {
     isOnline: {
       async handler (isOnline) {
         if (isOnline) {
-          const maxQuantity = await this.getQuantity()
-          this.maxQuantity = maxQuantity
-        }
-      }
-    },
-    isMicrocartOpen: {
-      async handler (isOpen) {
-        if (isOpen) {
           const maxQuantity = await this.getQuantity()
           this.maxQuantity = maxQuantity
         }

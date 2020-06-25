@@ -147,7 +147,7 @@ $screen-l: 1170px;
 
   &__features {
     position: absolute;
-    z-index: 3;
+    z-index: 1;
     top: 0;
     left: 0;
     width: $features-column-width-mobile;

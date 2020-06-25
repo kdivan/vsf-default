@@ -10,7 +10,6 @@
             :per-page="4"
             :items="reviews"
             :product-name="productName"
-            :product="product"
           />
         </div>
         <div class="col-xs-12 col-md-5 pt50">
@@ -137,10 +136,6 @@ export default {
     productName: {
       type: String,
       default: ''
-    },
-    product: {
-      type: Object,
-      required: true
     }
   },
   computed: {

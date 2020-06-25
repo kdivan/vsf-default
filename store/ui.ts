@@ -62,12 +62,6 @@ export const uiStore = {
     },
     toggleWishlist ({ commit, state }) {
       commit('setWishlist', !state.wishlist)
-    },
-    closeMicrocart ({ commit, state }) {
-      if (state.microcart) commit('setMicrocart', false)
-    },
-    closeWishlist ({ commit, state }) {
-      if (state.wishlist) commit('setWishlist', false)
     }
   }
 }

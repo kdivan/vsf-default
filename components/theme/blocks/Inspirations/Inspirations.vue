@@ -16,20 +16,17 @@ import InspirationTile from './InspirationTile.vue'
 export default {
   name: 'Inspirations',
 
-  async beforeMount () {
-    let inspirationsQuery = prepareQuery({ queryConfig: 'inspirations' })
-    const { items } = await this.$store.dispatch('product/findProducts', {
+  beforeMount () {
+    let inspirationsQuery = prepareQuery({queryConfig: 'inspirations'})
+    this.$store.dispatch('product/list', {
       query: inspirationsQuery,
       size: 3,
-      sort: 'created_at:desc',
-      options: {
-        populateRequestCacheTags: false,
-        prefetchGroupProducts: false
+      sort: 'created_at:desc'
+    }).then(res => {
+      if (res) {
+        this.products = res.items
       }
     })
-    if (items.length) {
-      this.products = items
-    }
   },
 
   data () {

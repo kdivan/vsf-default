@@ -14,7 +14,7 @@
     <img
       v-if="!lowerQualityImageError || isOnline"
       v-show="showLowerQuality"
-      v-lazy="image.loading"
+      :src="image.loading"
       :alt="alt"
       @load="imageLoaded('lower', true)"
       @error="imageLoaded('lower', false)"
@@ -24,7 +24,7 @@
     <img
       v-if="!highQualityImageError || isOnline"
       v-show="showHighQuality"
-      v-lazy="image.src"
+      :src="image.src"
       :alt="alt"
       @load="imageLoaded('high', true)"
       @error="imageLoaded('high', false)"
@@ -81,11 +81,11 @@ export default {
       return this.highQualityImage
     },
     imageRatio () {
-      const { width, height } = this.$store.state.config.products.gallery
+      const {width, height} = this.$store.state.config.products.gallery
       return `${height / (width / 100)}%`
     },
     style () {
-      return this.calcRatio ? { paddingBottom: this.imageRatio } : {}
+      return this.calcRatio ? {paddingBottom: this.imageRatio} : {}
     },
     isOnline (value) {
       return onlineHelper.isOnline

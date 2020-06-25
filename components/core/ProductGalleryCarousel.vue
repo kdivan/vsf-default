@@ -11,7 +11,6 @@
       ref="carousel"
       :speed="carouselTransitionSpeed"
       @pageChange="pageChange"
-      :navigate-to="currentPage"
     >
       <slide
         v-for="(images, index) in gallery"
@@ -46,6 +45,7 @@
 
 <script>
 import config from 'config'
+import { Carousel, Slide } from 'vue-carousel'
 import ProductImage from './ProductImage'
 import ProductVideo from './ProductVideo'
 import reduce from 'lodash-es/reduce'
@@ -54,8 +54,8 @@ import map from 'lodash-es/map'
 export default {
   name: 'ProductGalleryCarousel',
   components: {
-    'Carousel': () => import(/* webpackChunkName: "vue-carousel" */ 'vue-carousel').then(Slider => Slider.Carousel),
-    'Slide': () => import(/* webpackChunkName: "vue-carousel" */ 'vue-carousel').then(Slider => Slider.Slide),
+    Carousel,
+    Slide,
     ProductImage,
     ProductVideo
   },
@@ -84,30 +84,30 @@ export default {
   },
   computed: {},
   beforeMount () {
-    this.$bus.$on('product-after-configure', this.selectVariant)
+    this.$bus.$on('filter-changed-product', this.selectVariant)
     this.$bus.$on('product-after-load', this.selectVariant)
   },
   mounted () {
     this.selectVariant()
 
     if (this.configuration.color) {
-      const { color } = this.configuration
+      const {color} = this.configuration
       this.currentColor = color.id
     }
 
     this.$emit('loaded')
   },
   beforeDestroy () {
-    this.$bus.$off('product-after-configure', this.selectVariant)
+    this.$bus.$off('filter-changed-product', this.selectVariant)
     this.$bus.$off('product-after-load', this.selectVariant)
   },
   methods: {
     navigate (index) {
-      if (index < 0) return
-      this.currentPage = index
+      if (this.$refs.carousel) {
+        this.$refs.carousel.goToPage(index)
+      }
     },
-    async selectVariant (configuration) {
-      await this.$nextTick()
+    selectVariant () {
       if (config.products.gallery.mergeConfigurableChildren) {
         const option = reduce(map(this.configuration, 'attribute_code'), (result, attribute) => {
           result[attribute] = this.configuration[attribute].id
@@ -116,7 +116,7 @@ export default {
         if (option) {
           let index = this.gallery.findIndex(
             obj => obj.id && Object.entries(obj.id).toString() === Object.entries(option).toString(), option)
-          if (index < 0) index = this.gallery.findIndex(obj => String(obj.id && obj.id.color) === String(option.color))
+          if (index < 0) index = this.gallery.findIndex(obj => obj.id && obj.id.color === option.color)
           this.navigate(index)
         }
       }
@@ -128,7 +128,7 @@ export default {
       this.$emit('toggle', currentSlide)
     },
     switchCarouselSpeed () {
-      const { color } = this.configuration
+      const {color} = this.configuration
       if (color && this.currentColor !== color.id) {
         this.currentColor = color.id
         this.carouselTransitionSpeed = 0
@@ -138,6 +138,8 @@ export default {
     },
     pageChange (index) {
       this.switchCarouselSpeed()
+
+      this.currentPage = index
       this.hideImageAtIndex = null
     },
     onVideoStarted (index) {

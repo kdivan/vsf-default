@@ -17,7 +17,7 @@
     <!-- My order body -->
     <div class="row fs16 mb20">
       <div class="col-xs-12 h4">
-        <p>{{ order.created_at | date('LLL', storeView) }}</p>
+        <p>{{ order.created_at | date('LLL') }}</p>
         <p class="mt35">
           <a href="#" class="underline" @click.prevent="remakeOrder(singleOrderItems)">{{ $t('Remake order') }}</a>
         </p>
@@ -58,13 +58,13 @@
                 {{ item.sku }}
               </td>
               <td class="fs-medium lh25" :data-th="$t('Price')">
-                {{ item.price_incl_tax | price(storeView) }}
+                {{ item.price_incl_tax | price }}
               </td>
               <td class="fs-medium lh25 align-right" :data-th="$t('Qty')">
                 {{ item.qty_ordered }}
               </td>
               <td class="fs-medium lh25" :data-th="$t('Subtotal')">
-                {{ item.row_total_incl_tax | price(storeView) }}
+                {{ item.row_total_incl_tax | price }}
               </td>
               <td class="fs-medium lh25">
                 <product-image :image="{src: itemThumbnail[item.sku]}" />
@@ -76,31 +76,31 @@
               <td colspan="5" class="align-right">
                 {{ $t('Subtotal') }}
               </td>
-              <td>{{ order.subtotal | price(storeView) }}</td>
+              <td>{{ order.subtotal | price }}</td>
             </tr>
             <tr>
               <td colspan="5" class="align-right">
                 {{ $t('Shipping') }}
               </td>
-              <td>{{ order.shipping_amount | price(storeView) }}</td>
+              <td>{{ order.shipping_amount | price }}</td>
             </tr>
             <tr>
               <td colspan="5" class="align-right">
                 {{ $t('Tax') }}
               </td>
-              <td>{{ order.tax_amount + order.discount_tax_compensation_amount | price(storeView) }}</td>
+              <td>{{ order.tax_amount + order.discount_tax_compensation_amount | price }}</td>
             </tr>
             <tr v-if="order.discount_amount">
               <td colspan="5" class="align-right">
                 {{ $t('Discount') }}
               </td>
-              <td>{{ order.discount_amount | price(storeView) }}</td>
+              <td>{{ order.discount_amount | price }}</td>
             </tr>
             <tr>
               <td colspan="5" class="align-right">
                 {{ $t('Grand total') }}
               </td>
-              <td>{{ order.grand_total | price(storeView) }}</td>
+              <td>{{ order.grand_total | price }}</td>
             </tr>
           </tfoot>
         </table>
@@ -110,7 +110,7 @@
       <div class="col-xs-12 h4">
         <h4>{{ $t('Order informations') }}</h4>
         <div class="row">
-          <div class="col-sm-6 col-md-3" v-if="shippingAddress">
+          <div class="col-sm-6 col-md-3">
             <h5>{{ $t('Shipping address') }}</h5>
             <address>
               <p>{{ shippingAddress.firstname }} {{ shippingAddress.lastname }}</p>
@@ -119,7 +119,7 @@
               <p>{{ shippingAddress.country }}</p>
             </address>
           </div>
-          <div class="col-sm-6 col-md-3" v-if="order.shipping_description">
+          <div class="col-sm-6 col-md-3">
             <h5>{{ $t('Shipping method') }}</h5>
             <p>{{ order.shipping_description }}</p>
           </div>
@@ -148,7 +148,6 @@ import MyOrder from '@vue-storefront/core/compatibility/components/blocks/MyAcco
 import ReturnIcon from 'theme/components/core/blocks/Header/ReturnIcon'
 import ProductImage from 'theme/components/core/ProductImage'
 import { getThumbnailPath, productThumbnailPath } from '@vue-storefront/core/helpers'
-import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import { mapActions } from 'vuex'
 
 export default {
@@ -162,11 +161,6 @@ export default {
       itemThumbnail: []
     }
   },
-  computed: {
-    storeView () {
-      return currentStoreView()
-    }
-  },
   methods: {
     ...mapActions({
       getProduct: 'product/single'
@@ -175,7 +169,7 @@ export default {
   mounted () {
     this.singleOrderItems.forEach(async item => {
       if (!this.itemThumbnail[item.sku]) {
-        const product = await this.getProduct({ options: { sku: item.sku } })
+        const product = await this.getProduct({ options: { sku: item.sku }, setCurrentProduct: false, setCurrentCategoryPath: false, selectDefaultVariant: false })
         const thumbnail = productThumbnailPath(product)
         Vue.set(this.itemThumbnail, item.sku, getThumbnailPath(thumbnail, 280, 280))
       }

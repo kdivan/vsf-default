@@ -23,7 +23,6 @@
           class="media-zoom-carousel__carousel"
           :speed="carouselTransitionSpeed"
           @pageChange="pageChange"
-          :navigate-to="currentPage"
         >
           <slide
             v-for="(images, index) in gallery"
@@ -32,11 +31,10 @@
             <div class="media-zoom-carousel__slide bg-cl-secondary"
                  :class="{'video-container h-100 flex relative': images.video}"
             >
-              <product-gallery-image
+              <product-image
                 v-show="hideImageAtIndex !== index"
                 :image="images"
                 :alt="productName | htmlDecode"
-                :is-active="index === currentPage"
               />
               <product-video
                 v-if="images.video && (index === currentPage)"
@@ -53,9 +51,9 @@
 </template>
 
 <script>
+import { Carousel, Slide } from 'vue-carousel'
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock'
 import ProductImage from './ProductImage'
-import ProductGalleryImage from './ProductGalleryImage'
 import ProductVideo from './ProductVideo'
 
 export default {
@@ -83,10 +81,9 @@ export default {
     }
   },
   components: {
-    'Carousel': () => import(/* webpackChunkName: "vue-carousel" */ 'vue-carousel').then(Slider => Slider.Carousel),
-    'Slide': () => import(/* webpackChunkName: "vue-carousel" */ 'vue-carousel').then(Slider => Slider.Slide),
+    Carousel,
+    Slide,
     ProductImage,
-    ProductGalleryImage,
     ProductVideo
   },
   mounted () {
@@ -105,17 +102,18 @@ export default {
       }
     }
   },
-  beforeDestroy () {
+  destroyed () {
     clearAllBodyScrollLocks()
   },
   methods: {
-    navigate (index) {
-      this.currentPage = index
+    navigate (key) {
+      this.$refs.zoomCarousel.goToPage(key)
     },
     increaseCarouselTransitionSpeed () {
       this.carouselTransitionSpeed = 500
     },
     pageChange (index) {
+      this.currentPage = index
       this.hideImageAtIndex = null
     },
     onVideoStarted (index) {

@@ -30,12 +30,12 @@
       </div>
     </div>
     <div class="col-xs flex py15 align-right">
-      <div v-if="product.price_incl_tax">
-        <span class="price-special" v-if="product.special_price">{{ product.price_incl_tax | price(storeView) }}</span>&nbsp;
-        <span class="price-original" v-if="product.special_price">{{ product.original_price_incl_tax | price(storeView) }}</span>
+      <div>
+        <span class="price-special" v-if="product.special_price">{{ product.price_incl_tax | price }}</span>&nbsp;
+        <span class="price-original" v-if="product.special_price">{{ product.original_price_incl_tax | price }}</span>
 
         <span v-if="!product.special_price">
-          {{ product.price_incl_tax | price(storeView) }}
+          {{ product.price_incl_tax | price }}
         </span>
       </div>
       <div>
@@ -80,9 +80,6 @@ export default {
         loading: this.thumbnail,
         src: this.thumbnail
       }
-    },
-    storeView () {
-      return currentStoreView()
     }
   },
   methods: {
@@ -106,8 +103,8 @@ export default {
   will-change: opacity;
   transition: .3s opacity $motion-main;
   &:hover{
-     opacity: 1;
-   }
+    opacity: 1;
+  }
 }
 .col-xs {
   flex-direction: column;

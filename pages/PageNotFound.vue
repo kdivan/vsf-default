@@ -31,19 +31,17 @@
             {{ $t('to find product you were looking for.') }}
           </p>
         </div>
-        <section class="container" v-if="ourBestsellersCollection.length">
+        <section class="container">
           <header class="col-md-12 pt40">
             <h3 class="align-center">
               {{ $t('See our bestsellers') }}
             </h3>
           </header>
-          <lazy-hydrate when-idle>
-            <div class="row center-xs">
-              <div v-for="product in ourBestsellersCollection" :key="product.id" class="col-md-3">
-                <product-tile :product="product" />
-              </div>
+          <div class="row center-xs">
+            <div v-for="product in ourBestsellersCollection" :key="product.id" class="col-md-3">
+              <product-tile :product="product" />
             </div>
-          </lazy-hydrate>
+          </div>
         </section>
       </div>
     </section>
@@ -54,7 +52,6 @@
 import { mapGetters } from 'vuex'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import i18n from '@vue-storefront/i18n'
-import LazyHydrate from 'vue-lazy-hydration'
 import ProductTile from '../components/core/ProductTile.vue'
 
 export default {
@@ -80,8 +77,7 @@ export default {
     }
   },
   components: {
-    ProductTile,
-    LazyHydrate
+    ProductTile
   },
   methods: {
     toggleSearchpanel () {
